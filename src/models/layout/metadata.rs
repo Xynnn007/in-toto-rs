@@ -22,6 +22,8 @@ pub struct LayoutMetadataBuilder {
     keys: HashMap<KeyId, PublicKey>,
     steps: Vec<Step>,
     inspect: Vec<Inspection>,
+    rootcas: HashMap<KeyId, PublicKey>,
+    intermediatecas: HashMap<KeyId, PublicKey>,
 }
 
 impl Default for LayoutMetadataBuilder {
@@ -42,6 +44,8 @@ impl LayoutMetadataBuilder {
             keys: HashMap::new(),
             expires: Utc::now() + Duration::days(365),
             readme: String::new(),
+            rootcas: HashMap::new(),
+            intermediatecas: HashMap::new(),
         }
     }
 
@@ -99,6 +103,18 @@ impl LayoutMetadataBuilder {
         self
     }
 
+    /// Add a root CA to this layout
+    pub fn add_rootca(mut self, ca: PublicKey) -> Self {
+        self.rootcas.insert(ca.key_id().clone(), ca);
+        self
+    }
+
+    /// Add an intermediate ca to this layout
+    pub fn add_intermediateca(mut self, ca: PublicKey) -> Self {
+        self.intermediatecas.insert(ca.key_id().clone(), ca);
+        self
+    }
+
     pub fn build(self) -> Result<LayoutMetadata> {
         Ok(LayoutMetadata::new(
             self.expires,
@@ -106,6 +122,8 @@ impl LayoutMetadataBuilder {
             self.keys,
             self.steps,
             self.inspect,
+            self.rootcas,
+            self.intermediatecas,
         ))
     }
 }
@@ -118,6 +136,8 @@ pub struct LayoutMetadata {
     pub keys: HashMap<KeyId, PublicKey>,
     pub expires: DateTime<Utc>,
     pub readme: String,
+    pub rootcas: HashMap<KeyId, PublicKey>,
+    pub intermediatecas: HashMap<KeyId, PublicKey>,
 }
 
 impl LayoutMetadata {
@@ -127,6 +147,8 @@ impl LayoutMetadata {
         keys: HashMap<KeyId, PublicKey>,
         steps: Vec<Step>,
         inspect: Vec<Inspection>,
+        rootcas: HashMap<KeyId, PublicKey>,
+        intermediatecas: HashMap<KeyId, PublicKey>,
     ) -> Self {
         LayoutMetadata {
             steps,
@@ -134,6 +156,8 @@ impl LayoutMetadata {
             keys,
             expires,
             readme,
+            rootcas,
+            intermediatecas,
         }
     }
 }

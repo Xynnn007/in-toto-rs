@@ -30,6 +30,8 @@ pub struct Layout {
     keys: BTreeMap<KeyId, PublicKey>,
     steps: Vec<Step>,
     inspect: Vec<Inspection>,
+    rootcas: BTreeMap<KeyId, PublicKey>,
+    intermediatecas: BTreeMap<KeyId, PublicKey>,
 }
 
 impl Layout {
@@ -45,6 +47,16 @@ impl Layout {
                 .collect(),
             steps: meta.steps.clone(),
             inspect: meta.inspect.clone(),
+            rootcas: meta
+                .rootcas
+                .iter()
+                .map(|(id, key)| (id.clone(), key.clone()))
+                .collect(),
+            intermediatecas: meta
+                .intermediatecas
+                .iter()
+                .map(|(id, key)| (id.clone(), key.clone()))
+                .collect(),
         })
     }
 
@@ -63,12 +75,38 @@ impl Layout {
             })
             .collect();
 
+        let cas_with_correct_key_id = self
+            .rootcas
+            .into_iter()
+            .filter(|(key_id, pkey)| match key_id == pkey.key_id() {
+                true => true,
+                false => {
+                    warn!("Malformed key of ID {:?}", key_id);
+                    false
+                }
+            })
+            .collect();
+
+        let intermediatecas_with_correct_key_id= self
+            .intermediatecas
+            .into_iter()
+            .filter(|(key_id, pkey)| match key_id == pkey.key_id() {
+                true => true,
+                false => {
+                    warn!("Malformed key of ID {:?}", key_id);
+                    false
+                }
+            })
+            .collect();
+
         Ok(LayoutMetadata::new(
             parse_datetime(&self.expires)?,
             self.readme,
             keys_with_correct_key_id,
             self.steps,
             self.inspect,
+            cas_with_correct_key_id,
+            intermediatecas_with_correct_key_id,
         ))
     }
 }
